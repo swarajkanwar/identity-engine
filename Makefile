@@ -1,4 +1,4 @@
-.PHONY: install-tools generate deps build run clean all
+.PHONY: install-tools generate deps build run clean all docs-dev docs-build
 
 all: install-tools generate deps build
 
@@ -26,6 +26,7 @@ deps:
 build:
 	go build -o bin/identity-engine internal/cmd/main.go
 	go build -o bin/identity-mcp internal/mcp/main.go
+	go build -o bin/identity-mcp-test internal/mcp-test/main.go
 
 run: build
 	./bin/identity-engine
@@ -33,6 +34,16 @@ run: build
 run-mcp: build
 	./bin/identity-mcp
 
+test-mcp: build
+	./bin/identity-mcp-test
+
+docs-dev:
+	cd docs && npm install && npm start
+
+docs-build:
+	cd docs && npm install && npm run build
+
 clean:
 	rm -rf bin/
 	rm -f proto/*.pb.go
+	rm -rf docs/dist docs/build
