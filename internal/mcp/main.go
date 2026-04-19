@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -56,6 +57,39 @@ type InputSchema struct {
 	Type       string                 `json:"type"`
 	Properties map[string]interface{} `json:"properties"`
 	Required   []string               `json:"required,omitempty"`
+}
+
+// Sample RAG Database
+var sampleRagDB = map[string]string{
+	"what is identity-engine?": "Identity Engine is a fast, robust gRPC service for managing user identities.",
+	"how do I authenticate?":   "You authenticate by providing a valid JWT token in the Authorization header.",
+	"what is mcp?":             "MCP stands for Model Context Protocol, allowing AI models to easily call local tools.",
+}
+
+// Dummy vector search that just checks for keyword overlap
+func queryRagDatabase(query string) string {
+	query = strings.ToLower(query)
+	var bestMatch string
+	var bestScore int
+
+	for key, value := range sampleRagDB {
+		score := 0
+		words := strings.Fields(query)
+		for _, word := range words {
+			if strings.Contains(key, word) {
+				score++
+			}
+		}
+		if score > bestScore {
+			bestScore = score
+			bestMatch = value
+		}
+	}
+
+	if bestScore == 0 {
+		return "I could not find any relevant information in the knowledge base."
+	}
+	return bestMatch
 }
 
 func main() {
@@ -150,6 +184,17 @@ func main() {
 							Properties: map[string]interface{}{},
 						},
 					},
+					{
+						Name:        "query_knowledge_base",
+						Description: "Query the RAG knowledge base for general information about the system",
+						InputSchema: InputSchema{
+							Type: "object",
+							Properties: map[string]interface{}{
+								"query": map[string]string{"type": "string", "description": "The question to ask the knowledge base"},
+							},
+							Required: []string{"query"},
+						},
+					},
 				},
 			})
 		case "tools/call":
@@ -187,6 +232,10 @@ func main() {
 			case "list_users":
 				res, err := client.ListUsers(ctx, &pb.ListUsersRequest{})
 				content = formatResult(res, err)
+			case "query_knowledge_base":
+				query, _ := params.Arguments["query"].(string)
+				answer := queryRagDatabase(query)
+				content = []map[string]interface{}{{"type": "text", "text": answer}}
 			default:
 				content = []map[string]interface{}{{"type": "text", "text": "unknown tool"}}
 			}

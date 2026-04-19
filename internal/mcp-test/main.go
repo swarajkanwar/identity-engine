@@ -57,15 +57,15 @@ func main() {
 		// fmt.Println("Init Response:", scanner.Text())
 	}
 
-	// 2. Send the `tools/call` request to get_user with ID "1"
+	// 2. Send the `tools/call` request to query_knowledge_base
 	callReq := JSONRPCRequest{
 		JSONRPC: "2.0",
 		ID:      2,
 		Method:  "tools/call",
 		Params: map[string]interface{}{
-			"name": "get_user",
+			"name": "query_knowledge_base",
 			"arguments": map[string]interface{}{
-				"id": "1", // We assume a user with ID 1 exists
+				"query": "tell me how to authenticate?",
 			},
 		},
 	}
@@ -94,15 +94,8 @@ func main() {
 			firstContent := content[0].(map[string]interface{})
 			text := firstContent["text"].(string)
 
-			// Try to parse the inner JSON text which is our User object
-			var user map[string]interface{}
-			if err := json.Unmarshal([]byte(text), &user); err == nil && user["email"] != nil {
-				fmt.Println("Success!")
-				fmt.Printf("User Email: %v\n", user["email"])
-			} else {
-				// If it's an error from the gRPC server (e.g. user not found), it will be text
-				fmt.Printf("Response: %s\n", text)
-			}
+			fmt.Println("Query: 'how to authenticate?'")
+			fmt.Printf("RAG Response: %s\n", text)
 		}
 	}
 
